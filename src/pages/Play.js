@@ -1,29 +1,18 @@
 import { useState } from "react";
-import sampleEvents from "../data/sampleEvents";
-
-const categories = ["All", "History", "Technology", "Science", "Books", "Gaming"];
-
-function getRandomEvent(usedIds, selectedCategory) {
-  const availableEvents = sampleEvents.filter((event) => {
-    const categoryMatches =
-      selectedCategory === "All" || event.category === selectedCategory;
-
-    return !usedIds.includes(event.id) && categoryMatches;
-  });
-
-  if (availableEvents.length === 0) {
-    return null;
-  }
-
-  const randomIndex = Math.floor(Math.random() * availableEvents.length);
-  return availableEvents[randomIndex];
-}
+import { getRandomEvent, submitGuess } from "../services/eventService";
+const categories = [
+  "All",
+  "History",
+  "Technology",
+  "Science",
+  "Books",
+  "Gaming"
+];
 
 function Play() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [gameStarted, setGameStarted] = useState(false);
 
-  const [usedIds, setUsedIds] = useState([]);
   const [currentEvent, setCurrentEvent] = useState(null);
 
   const [guess, setGuess] = useState("");
@@ -31,69 +20,69 @@ function Play() {
 
   const [attempts, setAttempts] = useState(0);
   const [totalAttempts, setTotalAttempts] = useState(0);
+
   const [score, setScore] = useState(0);
+
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
 
   const [isCorrect, setIsCorrect] = useState(false);
+
   const [gameFinished, setGameFinished] = useState(false);
 
-  function startGame() {
-    const firstEvent = getRandomEvent([], selectedCategory);
+  async function startGame() {
+    try {
+      const firstEvent = await getRandomEvent(selectedCategory);
 
-    if (!firstEvent) {
-      setFeedback("No events available for this category.");
-      return;
+      setCurrentEvent(firstEvent);
+
+      setGuess("");
+
+      setFeedback("");
+
+      setAttempts(0);
+
+      setTotalAttempts(0);
+
+      setScore(0);
+
+      setStreak(0);
+
+      setBestStreak(0);
+
+      setIsCorrect(false);
+
+      setGameFinished(false);
+
+      setGameStarted(true);
+    } catch (error) {
+      console.error(error);
+
+      setFeedback("No events available.");
     }
+  }
+async function handleGuess(event) {
+  event.preventDefault();
 
-    setUsedIds([]);
-    setCurrentEvent(firstEvent);
-    setGuess("");
-    setFeedback("");
-    setAttempts(0);
-    setTotalAttempts(0);
-    setScore(0);
-    setStreak(0);
-    setBestStreak(0);
-    setIsCorrect(false);
-    setGameFinished(false);
-    setGameStarted(true);
+  const guessedYear = Number(guess);
+
+  if (!guess) {
+    setFeedback("Please enter a year.");
+    return;
   }
 
-  function handleGuess(event) {
-    event.preventDefault();
+  try {
+    const result = await submitGuess(currentEvent.id, guessedYear);
 
-    const guessedYear = Number(guess);
+    setFeedback(result.message);
 
-    if (!guess) {
-      setFeedback("Please enter a year.");
-      return;
-    }
+    setAttempts(attempts + 1);
+    setTotalAttempts(totalAttempts + 1);
 
-    if (guessedYear < currentEvent.year) {
-      setFeedback("Too early! Try a later year.");
-      setAttempts(attempts + 1);
-      setTotalAttempts(totalAttempts + 1);
-      setStreak(0);
-    } else if (guessedYear > currentEvent.year) {
-      setFeedback("Too late! Try an earlier year.");
-      setAttempts(attempts + 1);
-      setTotalAttempts(totalAttempts + 1);
-      setStreak(0);
-    } else {
-      const earnedPoints =
-        currentEvent.difficulty === "Hard"
-          ? 30
-          : currentEvent.difficulty === "Medium"
-          ? 20
-          : 10;
-
+    if (result.result === "Correct") {
       const newStreak = streak + 1;
 
-      setFeedback(`Correct! The answer was ${currentEvent.year}.`);
-      setAttempts(attempts + 1);
-      setTotalAttempts(totalAttempts + 1);
-      setScore(score + earnedPoints);
+      setScore(score + result.pointsEarned);
       setStreak(newStreak);
 
       if (newStreak > bestStreak) {
@@ -101,35 +90,48 @@ function Play() {
       }
 
       setIsCorrect(true);
+    } else {
+      setStreak(0);
     }
 
     setGuess("");
+  } catch (error) {
+    console.error(error);
+    setFeedback("Could not submit guess.");
   }
+}
 
-  function handleNextEvent() {
-    const updatedUsedIds = [...usedIds, currentEvent.id];
-    setUsedIds(updatedUsedIds);
+  async function handleNextEvent() {
+    try {
+      const nextEvent = await getRandomEvent(selectedCategory);
 
-    const nextEvent = getRandomEvent(updatedUsedIds, selectedCategory);
+      setCurrentEvent(nextEvent);
 
-    if (!nextEvent) {
+      setGuess("");
+
+      setFeedback("");
+
+      setAttempts(0);
+
+      setIsCorrect(false);
+    } catch (error) {
+      console.error(error);
+
       setGameFinished(true);
-      return;
     }
-
-    setCurrentEvent(nextEvent);
-    setGuess("");
-    setFeedback("");
-    setAttempts(0);
-    setIsCorrect(false);
   }
 
   function handleSkip() {
     setStreak(0);
+
     handleNextEvent();
   }
 
   function getDifficultyClass() {
+    if (!currentEvent) {
+      return "difficulty easy";
+    }
+
     if (currentEvent.difficulty === "Hard") {
       return "difficulty hard";
     }
@@ -243,12 +245,18 @@ function Play() {
 
         <div className="stats">
           <p>Attempts: {attempts}</p>
+
           <p>Score: {score}</p>
+
           <p>Streak: {streak}</p>
         </div>
 
         <div className="game-actions">
-          {isCorrect && <button onClick={handleNextEvent}>Next Event</button>}
+          {isCorrect && (
+            <button onClick={handleNextEvent}>
+              Next Event
+            </button>
+          )}
 
           {!isCorrect && (
             <button onClick={handleSkip} className="skip-button">
