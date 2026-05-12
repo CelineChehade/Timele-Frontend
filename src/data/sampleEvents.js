@@ -33,6 +33,41 @@ const sampleEvents = [
     year: 2005,
     category: "Technology",
     difficulty: "Easy"
+  },
+  {
+    id: 6,
+    title: "The Berlin Wall fell",
+    year: 1989,
+    category: "History",
+    difficulty: "Medium"
+  },
+  {
+    id: 7,
+    title: "The first Harry Potter book was published",
+    year: 1997,
+    category: "Books",
+    difficulty: "Medium"
+  },
+  {
+    id: 8,
+    title: "The PlayStation 2 was released",
+    year: 2000,
+    category: "Gaming",
+    difficulty: "Medium"
+  },
+  {
+    id: 9,
+    title: "The moon landing occurred",
+    year: 1969,
+    category: "Science",
+    difficulty: "Easy"
+  },
+  {
+    id: 10,
+    title: "Netflix was founded",
+    year: 1997,
+    category: "Technology",
+    difficulty: "Hard"
   }
 ];
 

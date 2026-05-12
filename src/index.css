@@ -278,3 +278,34 @@ select {
     grid-template-columns: 60px 1fr 90px;
   }
 }
+
+.game-actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.skip-button {
+  background: #9ca3af;
+}
+
+.skip-button:hover {
+  background: #6b7280;
+}
+
+.difficulty {
+  color: white;
+}
+
+.difficulty.easy {
+  background: #15803d;
+}
+
+.difficulty.medium {
+  background: #b45309;
+}
+
+.difficulty.hard {
+  background: #b91c1c;
+}
