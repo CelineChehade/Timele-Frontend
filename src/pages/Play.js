@@ -1,36 +1,64 @@
 import { useState } from "react";
 import sampleEvents from "../data/sampleEvents";
 
-function getRandomEvent(usedIds) {
-  const availableEvents = sampleEvents.filter(
-    (event) => !usedIds.includes(event.id)
-  );
+const categories = ["All", "History", "Technology", "Science", "Books", "Gaming"];
+
+function getRandomEvent(usedIds, selectedCategory) {
+  const availableEvents = sampleEvents.filter((event) => {
+    const categoryMatches =
+      selectedCategory === "All" || event.category === selectedCategory;
+
+    return !usedIds.includes(event.id) && categoryMatches;
+  });
 
   if (availableEvents.length === 0) {
     return null;
   }
 
   const randomIndex = Math.floor(Math.random() * availableEvents.length);
-
   return availableEvents[randomIndex];
 }
 
 function Play() {
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [gameStarted, setGameStarted] = useState(false);
+
   const [usedIds, setUsedIds] = useState([]);
-
-  const firstEvent = getRandomEvent([]);
-
-  const [currentEvent, setCurrentEvent] = useState(firstEvent);
+  const [currentEvent, setCurrentEvent] = useState(null);
 
   const [guess, setGuess] = useState("");
   const [feedback, setFeedback] = useState("");
 
   const [attempts, setAttempts] = useState(0);
+  const [totalAttempts, setTotalAttempts] = useState(0);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
 
   const [isCorrect, setIsCorrect] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
+
+  function startGame() {
+    const firstEvent = getRandomEvent([], selectedCategory);
+
+    if (!firstEvent) {
+      setFeedback("No events available for this category.");
+      return;
+    }
+
+    setUsedIds([]);
+    setCurrentEvent(firstEvent);
+    setGuess("");
+    setFeedback("");
+    setAttempts(0);
+    setTotalAttempts(0);
+    setScore(0);
+    setStreak(0);
+    setBestStreak(0);
+    setIsCorrect(false);
+    setGameFinished(false);
+    setGameStarted(true);
+  }
 
   function handleGuess(event) {
     event.preventDefault();
@@ -45,10 +73,12 @@ function Play() {
     if (guessedYear < currentEvent.year) {
       setFeedback("Too early! Try a later year.");
       setAttempts(attempts + 1);
+      setTotalAttempts(totalAttempts + 1);
       setStreak(0);
     } else if (guessedYear > currentEvent.year) {
       setFeedback("Too late! Try an earlier year.");
       setAttempts(attempts + 1);
+      setTotalAttempts(totalAttempts + 1);
       setStreak(0);
     } else {
       const earnedPoints =
@@ -58,13 +88,17 @@ function Play() {
           ? 20
           : 10;
 
+      const newStreak = streak + 1;
+
       setFeedback(`Correct! The answer was ${currentEvent.year}.`);
-
       setAttempts(attempts + 1);
-
+      setTotalAttempts(totalAttempts + 1);
       setScore(score + earnedPoints);
+      setStreak(newStreak);
 
-      setStreak(streak + 1);
+      if (newStreak > bestStreak) {
+        setBestStreak(newStreak);
+      }
 
       setIsCorrect(true);
     }
@@ -74,10 +108,9 @@ function Play() {
 
   function handleNextEvent() {
     const updatedUsedIds = [...usedIds, currentEvent.id];
-
     setUsedIds(updatedUsedIds);
 
-    const nextEvent = getRandomEvent(updatedUsedIds);
+    const nextEvent = getRandomEvent(updatedUsedIds, selectedCategory);
 
     if (!nextEvent) {
       setGameFinished(true);
@@ -85,7 +118,6 @@ function Play() {
     }
 
     setCurrentEvent(nextEvent);
-
     setGuess("");
     setFeedback("");
     setAttempts(0);
@@ -93,6 +125,7 @@ function Play() {
   }
 
   function handleSkip() {
+    setStreak(0);
     handleNextEvent();
   }
 
@@ -108,21 +141,65 @@ function Play() {
     return "difficulty easy";
   }
 
+  if (!gameStarted) {
+    return (
+      <section className="play-page">
+        <div className="game-card">
+          <h1>Start a Timele Round</h1>
+
+          <p className="game-description">
+            Choose a category, then guess the year of each event. The game will
+            tell you if your guess is too early or too late.
+          </p>
+
+          <label className="category-label">Category</label>
+
+          <select
+            value={selectedCategory}
+            onChange={(event) => setSelectedCategory(event.target.value)}
+          >
+            {categories.map((category) => (
+              <option key={category}>{category}</option>
+            ))}
+          </select>
+
+          <button onClick={startGame} className="start-button">
+            Start Game
+          </button>
+
+          {feedback && <p className="feedback">{feedback}</p>}
+        </div>
+      </section>
+    );
+  }
+
   if (gameFinished) {
     return (
       <section className="play-page">
         <div className="game-card">
           <h1>Game Complete</h1>
 
-          <p>You finished all available events.</p>
+          <p>You finished all events in this category.</p>
 
-          <div className="stats">
-            <p>Final Score: {score}</p>
-            <p>Best Streak: {streak}</p>
+          <div className="final-stats">
+            <div>
+              <span>Final Score</span>
+              <strong>{score}</strong>
+            </div>
+
+            <div>
+              <span>Total Attempts</span>
+              <strong>{totalAttempts}</strong>
+            </div>
+
+            <div>
+              <span>Best Streak</span>
+              <strong>{bestStreak}</strong>
+            </div>
           </div>
 
-          <button onClick={() => window.location.reload()}>
-            Play Again
+          <button onClick={() => setGameStarted(false)}>
+            Play Another Round
           </button>
         </div>
       </section>
@@ -171,11 +248,7 @@ function Play() {
         </div>
 
         <div className="game-actions">
-          {isCorrect && (
-            <button onClick={handleNextEvent}>
-              Next Event
-            </button>
-          )}
+          {isCorrect && <button onClick={handleNextEvent}>Next Event</button>}
 
           {!isCorrect && (
             <button onClick={handleSkip} className="skip-button">
