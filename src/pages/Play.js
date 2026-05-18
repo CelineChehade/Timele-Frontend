@@ -6,7 +6,10 @@ const categories = [
   "Technology",
   "Science",
   "Books",
-  "Gaming"
+  "Gaming",
+  "Movies",
+  "Sports",
+  "Music"
 ];
 
 function Play() {
@@ -219,7 +222,7 @@ async function handleGuess(event) {
           </span>
         </div>
 
-        <h1>Guess the Year</h1>
+        <h1>⏳ Guess the Year</h1>
 
         <p className="event-title">{currentEvent.title}</p>
 

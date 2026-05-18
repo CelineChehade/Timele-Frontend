@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+import { createEvent } from "../services/eventService";
 function Admin() {
   const [title, setTitle] = useState("");
   const [year, setYear] = useState("");
@@ -7,7 +7,7 @@ function Admin() {
   const [difficulty, setDifficulty] = useState("Easy");
   const [message, setMessage] = useState("");
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!title || !year) {
@@ -22,9 +22,16 @@ function Admin() {
       difficulty
     };
 
-    console.log("New event created:", newEvent);
+   try {
+  await createEvent(newEvent);
 
-    setMessage("Event saved locally for now. Backend connection comes next.");
+  setMessage("Event added successfully.");
+} catch (error) {
+  console.error(error);
+
+  setMessage("Could not add event.");
+  return;
+}
 
     setTitle("");
     setYear("");

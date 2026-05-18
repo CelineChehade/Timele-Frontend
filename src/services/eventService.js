@@ -18,3 +18,7 @@ export async function submitGuess(eventId, guessedYear) {
 
   return response.data;
 }
+  export async function createEvent(eventData) {
+  const response = await api.post("/events", eventData);
+  return response.data;
+}
