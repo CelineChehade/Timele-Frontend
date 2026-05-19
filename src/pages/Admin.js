@@ -26,10 +26,13 @@ function Admin() {
   await createEvent(newEvent);
 
   setMessage("Event added successfully.");
-} catch (error) {
+}catch (error) {
   console.error(error);
 
-  setMessage("Could not add event.");
+  const errorMessage =
+    error.response?.data || "Could not add event.";
+
+  setMessage(errorMessage);
   return;
 }
 
